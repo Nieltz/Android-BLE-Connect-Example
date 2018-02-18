@@ -5,16 +5,15 @@
     android:layout_height="match_parent"
     android:descendantFocusability="beforeDescendants"
     android:focusableInTouchMode="true"
-    android:paddingBottom="@dimen/activity_vertical_margin"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingBottom="16dp"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.example.joelwasserman.androidbleconnectexample.MainActivity">
-
+    tools:context="com.example.nilsl.bleserviceexample.MainActivity">
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Hello Bluetooth Enthusiasts!" />
+        android:text="BLE Service Example" />
 
     <Button
         android:layout_width="100dp"
@@ -63,5 +62,6 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         android:background="@drawable/textviewborder"/>
+
 
 </RelativeLayout>
