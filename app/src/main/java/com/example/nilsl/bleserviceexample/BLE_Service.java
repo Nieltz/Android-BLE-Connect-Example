@@ -33,6 +33,7 @@ public class BLE_Service extends Service {
     BluetoothLeScanner btScanner;
     BluetoothGatt bluetoothGatt;
     BluetoothGattCharacteristic WriteCharateristic;
+    BluetoothGattCharacteristic ReadCharateristic;
     Boolean btScanning = false;
     int deviceIndex = 0;
     ArrayList<BluetoothDevice> devicesDiscovered = new ArrayList<>();
@@ -85,13 +86,21 @@ public class BLE_Service extends Service {
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
+            boolean status;
             final Message msg = new Message();
             final Bundle bundle = new Bundle();
+            String data;
+            status = gatt.readCharacteristic(ReadCharateristic);
+
+            final byte[] dataInput = characteristic.getValue();
+            data = dataInput.toString();
+            System.out.println("Charcteristic changed ");
             BleCommands bleCommand = new BleCommands(CHANGEDCHARACTERISTIC);
             bundle.putParcelable("COMMAND", bleCommand);
             msg.setData(bundle);
             mMainActivityHandler.sendMessage(msg);
         }
+
 
         @Override
         public void onConnectionStateChange(final BluetoothGatt gatt, final int status, final int newState) {
@@ -133,7 +142,17 @@ public class BLE_Service extends Service {
                                          BluetoothGattCharacteristic characteristic,
                                          int status) {
             if (status == BluetoothGatt.GATT_SUCCESS) {
-              //  broadcastUpdate(ACTION_DATA_AVAILABLE, characteristic);
+                byte[] BleMessage;
+                final Message msg = new Message();
+                final Bundle bundle = new Bundle();
+                System.out.println("Charcteristic read ");
+                //bluetoothGatt.readCharacteristic(ReadCharateristic);
+                BleMessage = characteristic.getValue();
+                System.out.println(BleMessage.toString());
+                //BleCommands bleCommand = new BleCommands(CHANGEDCHARACTERISTIC);
+                //bundle.putParcelable("COMMAND", bleCommand);
+                //msg.setData(bundle);
+                //mMainActivityHandler.sendMessage(msg);
             }
         }
     };
@@ -262,6 +281,25 @@ public class BLE_Service extends Service {
                 final int CharacteristicProperties = gattCharacteristic.getProperties();
                 BluetoothGattDescriptor CharacteristicDescriptor = gattCharacteristic.getDescriptor(gattCharacteristic.getUuid());
                 count++;
+                if  (((gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE) |
+                        (gattCharacteristic.getProperties() & BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE)) > 0) {
+                    WriteCharateristic = gattCharacteristic;
+                    gattCharacteristic.setValue("start".getBytes());
+                    gattCharacteristic.setWriteType(BluetoothGattCharacteristic.WRITE_TYPE_NO_RESPONSE);
+                    bluetoothGatt.writeCharacteristic(gattCharacteristic);
+                    boolean retVal =  bluetoothGatt.writeCharacteristic(gattCharacteristic);
+                    if(retVal) {
+                        System.out.println("Transmission Successful");
+
+                    }
+                }
+                else if(gattCharacteristic.getProperties() == 16){
+
+                    ReadCharateristic = gattCharacteristic;
+                    bluetoothGatt.readCharacteristic(ReadCharateristic);
+                    bluetoothGatt.setCharacteristicNotification(ReadCharateristic,true);
+                                   }
+
                 System.out.println("Characteristic discovered for service: " + charUuid);
                 System.out.println("Properties discovered for Characteristic: " + CharacteristicProperties);
                 characteristics.add("Characteristic discovered for service: "+charUuid+"\n");
