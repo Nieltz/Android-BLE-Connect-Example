@@ -21,6 +21,16 @@ public class BleCommands implements Parcelable {
     private String bleDeviceInfo;
     private boolean[] btAdaperState = new boolean[1];
 
+    public byte[] getReadMessage() {
+        return readMessage;
+    }
+
+    public void setReadMessage(byte[] readMessage) {
+        this.readMessage = readMessage;
+    }
+
+    private byte[] readMessage;
+
     public List<String> getCharacteristics() {
         return characteristics;
     }

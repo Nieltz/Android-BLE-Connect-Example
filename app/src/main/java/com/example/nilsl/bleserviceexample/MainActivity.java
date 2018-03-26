@@ -11,6 +11,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
@@ -58,9 +59,13 @@ public class MainActivity extends AppCompatActivity {
                     handleDevieList(deviceList);
                     break;
                 case CHANGEDCHARACTERISTIC:
-                    // this will get called anytime you perform a read or write characteristic operation
+                    // this will get called anytime a characteristic was updated and you registered for it
+                    byte[] readData = bleCommand.getReadMessage();
                     MainActivity.this.runOnUiThread(new Runnable() {
                         public void run() {
+                            if(isExternalStorageWritable()){
+
+                            }
                             peripheralTextView.append("device read or wrote to\n");
                         }
                     });
@@ -200,8 +205,9 @@ public class MainActivity extends AppCompatActivity {
                     public void run() {
                         peripheralTextView.setText("");
                         peripheralTextView.append("device disconnected\n");
-                        connectToDevice.setVisibility(View.VISIBLE);
                         disconnectDevice.setVisibility(View.INVISIBLE);
+                        connectToDevice.setVisibility(View.VISIBLE);
+
                     }
                 });
                 break;
@@ -319,6 +325,17 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
+
+    /* Checks if external storage is available for read and write */
+    public boolean isExternalStorageWritable() {
+        String state = Environment.getExternalStorageState();
+        if (Environment.MEDIA_MOUNTED.equals(state)) {
+            return true;
+        }
+        return false;
+    }
+
+
     @Override
     public void onStart() {
         super.onStart();

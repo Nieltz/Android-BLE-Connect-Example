@@ -86,16 +86,14 @@ public class BLE_Service extends Service {
 
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
-            boolean status;
             final Message msg = new Message();
             final Bundle bundle = new Bundle();
             String data;
-            status = gatt.readCharacteristic(ReadCharateristic);
-
             final byte[] dataInput = characteristic.getValue();
             data = dataInput.toString();
             System.out.println("Charcteristic changed ");
             BleCommands bleCommand = new BleCommands(CHANGEDCHARACTERISTIC);
+            bleCommand.setReadMessage(dataInput);
             bundle.putParcelable("COMMAND", bleCommand);
             msg.setData(bundle);
             mMainActivityHandler.sendMessage(msg);
