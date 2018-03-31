@@ -59,8 +59,20 @@ public class BLE_Service extends Service {
 
         super.onCreate();
         btManager = (BluetoothManager) getSystemService(Context.BLUETOOTH_SERVICE);
+
         btAdapter = btManager.getAdapter();
-        btScanner = btAdapter.getBluetoothLeScanner();
+        if (btAdapter == null) {
+            // Device does not support Bluetooth
+        } else {
+            if (!btAdapter.isEnabled()) {
+                btScanner = null;
+                btAdapter.enable();
+                // Bluetooth is not enable :)
+            }
+
+            btScanner = btAdapter.getBluetoothLeScanner();
+        }
+
         ConnectionState = false;
     }
     // Device scan callback.
@@ -88,9 +100,7 @@ public class BLE_Service extends Service {
         public void onCharacteristicChanged(BluetoothGatt gatt, final BluetoothGattCharacteristic characteristic) {
             final Message msg = new Message();
             final Bundle bundle = new Bundle();
-            String data;
             final byte[] dataInput = characteristic.getValue();
-            data = dataInput.toString();
             System.out.println("Charcteristic changed ");
             BleCommands bleCommand = new BleCommands(CHANGEDCHARACTERISTIC);
             bleCommand.setReadMessage(dataInput);
