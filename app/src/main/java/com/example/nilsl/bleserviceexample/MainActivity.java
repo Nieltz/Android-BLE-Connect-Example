@@ -2,6 +2,7 @@ package com.example.nilsl.bleserviceexample;
 
 
 import android.Manifest;
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
@@ -15,6 +16,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.view.View;
@@ -22,6 +24,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -35,6 +39,11 @@ public class MainActivity extends AppCompatActivity {
     Button startOrientationControlButton;
     TextView peripheralTextView;
     private final static int REQUEST_ENABLE_BT = 1;
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
     private static final int PERMISSION_REQUEST_COARSE_LOCATION = 1;
     private final static int BTAdapterState = 0;
     private final static int DEVICELIST = 1;
@@ -44,6 +53,9 @@ public class MainActivity extends AppCompatActivity {
     private final static int SCANNINGSTOPPED =5;
     private BLE_Service.BleServiceBinder mBinder;
     private boolean connectionState;
+    private String filename;
+    private boolean fileCountValid;
+
 
     private final Handler mMainActivityHandler = new Handler(){
         public void handleMessage(Message msg){
@@ -60,11 +72,31 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case CHANGEDCHARACTERISTIC:
                     // this will get called anytime a characteristic was updated and you registered for it
-                    byte[] readData = bleCommand.getReadMessage();
+                    final byte[] readData = bleCommand.getReadMessage();
+                    final int count =0;
+
+
                     MainActivity.this.runOnUiThread(new Runnable() {
                         public void run() {
+                            File path = getPublicDocumentsStorageDir("XdkLogs");
+                            if (!fileCountValid){
+                                File[] files = path.listFiles();
+                                final int count = files.length+1;
+                                filename  = "Log"+count+".txt";
+                                fileCountValid=true;
+                            }
+                            File file = new File(path, filename);
                             if(isExternalStorageWritable()){
+                                FileOutputStream outputStream;
+                                String dataToWrite = getStringFromBytes(readData);
+                                try {
+                                    outputStream =  new FileOutputStream(file, true);
+                                    outputStream.write(dataToWrite.getBytes());
+                                    outputStream.close();
+                                } catch (Exception e) {
+                                    e.printStackTrace();
 
+                                }
                             }
                             peripheralTextView.append("device read or wrote to\n");
                         }
@@ -169,6 +201,10 @@ public class MainActivity extends AppCompatActivity {
         });
         stopScanningButton.setVisibility(View.INVISIBLE);
 
+        this.verifyStoragePermissions(this);
+
+        this.fileCountValid =false;
+
               // Make sure we have access coarse location enabled, if not, prompt the user to enable it
         if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -182,6 +218,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             });
             builder.show();
+
         }
 
     }
@@ -336,7 +373,67 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    @Override
+
+    public File getPublicDocumentsStorageDir(String fileName) {
+        // Get the directory for the user's public pictures directory.
+        File file = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_DOCUMENTS), fileName);
+        if (!file.mkdirs()) {
+            //Log.e(LOG_TAG, "Directory not created");
+        }
+        return file;
+    }
+
+    public String getStringFromBytes(byte[] readData){
+        String output;
+        int lightVal;
+        int temp, pressure, humidity;
+        int type = readData[0];
+        byte [] bytes = new byte[4];
+
+        if (type ==0){
+            bytes[0] = readData[7];
+            bytes[1] = readData[6];
+            bytes[2] = readData[5];
+            bytes[3] = readData[4];
+            lightVal = byteArrayToInt(bytes);
+            output = "Light: " + lightVal +"\r\n";
+        }
+        else{
+            bytes[0] = readData[7];
+            bytes[1] = readData[6];
+            bytes[2] = readData[5];
+            bytes[3] = readData[4];
+            temp = byteArrayToInt(bytes);
+            bytes[0] = readData[11];
+            bytes[1] = readData[10];
+            bytes[2] = readData[9];
+            bytes[3] = readData[8];
+            pressure = byteArrayToInt(bytes);
+            bytes[0] = readData[15];
+            bytes[1] = readData[14];
+            bytes[2] = readData[13];
+            bytes[3] = readData[12];
+            humidity = byteArrayToInt(bytes);
+
+
+            output = "Environment: Temp:" + temp +", Pressure: " + pressure +", Humidity: " + humidity+"\r\n";
+        }
+
+        return output;
+    }
+
+    public static int byteArrayToInt(byte[] b)
+    {
+        int value = 0;
+        for (int i = 0; i < 4; i++) {
+            int shift = (4 - 1 - i) * 8;
+            value += (b[i] & 0x000000FF) << shift;
+        }
+        return value;
+    }
+
+       @Override
     public void onStart() {
         super.onStart();
 
@@ -357,6 +454,26 @@ public class MainActivity extends AppCompatActivity {
             peripheralTextView.append("device connected\n");
             connectToDevice.setVisibility(View.INVISIBLE);
             disconnectDevice.setVisibility(View.VISIBLE);
+        }
+    }
+    /**
+     * Checks if the app has permission to write to device storage
+     *
+     * If the app does not has permission then the user will be prompted to grant permissions
+     *
+     * @param activity
+     */
+    public static void verifyStoragePermissions(Activity activity) {
+        // Check if we have write permission
+        int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(
+                    activity,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
         }
     }
 }
