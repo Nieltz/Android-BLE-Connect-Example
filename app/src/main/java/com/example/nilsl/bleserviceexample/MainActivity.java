@@ -55,7 +55,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean connectionState;
     private String filename;
     private boolean fileCountValid;
-
+    private SensorData mSensorData;
+    public int count;
 
     private final Handler mMainActivityHandler = new Handler(){
         public void handleMessage(Message msg){
@@ -68,16 +69,33 @@ public class MainActivity extends AppCompatActivity {
                     break;
                 case DEVICELIST:
                     String deviceList = bleCommand.getBleDeviceInfo();
-                    handleDevieList(deviceList);
+                    handleDeviceList(deviceList);
                     break;
                 case CHANGEDCHARACTERISTIC:
                     // this will get called anytime a characteristic was updated and you registered for it
                     final byte[] readData = bleCommand.getReadMessage();
-                    final int count =0;
+                    final int cCount = count;
+
+                    mSensorData.setSensorValues(readData);
+
+                    final int lightValue = mSensorData.getLight();
+                    final int temperature = mSensorData.getTemperature();
+                    final int pressure = mSensorData.getPressure();
+                    final int humidity = mSensorData.getHumidity();
+
+                    String data =  getStringFromBytes(readData);
+                    final String dataForFile = "Count: " + cCount +" " + data;
+                    final String dataForView = "Lux: " + lightValue + " mLux\r\n" +
+                            "Temperature:" + temperature +" °mC\r\n" +
+                            "Pressure: " + pressure + " mBar\r\n" +
+                            "Humidity: " + humidity + " %";
 
 
                     MainActivity.this.runOnUiThread(new Runnable() {
                         public void run() {
+
+                            peripheralTextView.setText("");
+
                             File path = getPublicDocumentsStorageDir("XdkLogs");
                             if (!fileCountValid){
                                 File[] files = path.listFiles();
@@ -88,19 +106,20 @@ public class MainActivity extends AppCompatActivity {
                             File file = new File(path, filename);
                             if(isExternalStorageWritable()){
                                 FileOutputStream outputStream;
-                                String dataToWrite = getStringFromBytes(readData);
+                                peripheralTextView.append(dataForView);
                                 try {
                                     outputStream =  new FileOutputStream(file, true);
-                                    outputStream.write(dataToWrite.getBytes());
+                                    outputStream.write(dataForFile.getBytes());
                                     outputStream.close();
                                 } catch (Exception e) {
                                     e.printStackTrace();
 
                                 }
                             }
-                            peripheralTextView.append("device read or wrote to\n");
                         }
                     });
+
+                    count++;
                     break;
                 case CONNECTIONSTATECHANGED:
                     int connectionState = bleCommand.getConnectionState();
@@ -110,9 +129,10 @@ public class MainActivity extends AppCompatActivity {
                     stopScanningView();
                     break;
                 case SERVICESDISCOVERED:
-                    List<String> characteristics;
-                    characteristics = bleCommand.getCharacteristics();
-                    displayGattServices(characteristics);
+               //     List<String> characteristics;
+               //     characteristics = bleCommand.getCharacteristics();
+               //     displayGattServices(characteristics);
+                    peripheralTextView.append("Logging has started\n");
                     break;
             }
 
@@ -177,6 +197,7 @@ public class MainActivity extends AppCompatActivity {
                 connectToDeviceSelected();
             }
         });
+        connectToDevice.setVisibility(View.INVISIBLE);
 
         disconnectDevice = (Button) findViewById(R.id.DisconnectButton);
         disconnectDevice.setVisibility(View.INVISIBLE);
@@ -205,6 +226,9 @@ public class MainActivity extends AppCompatActivity {
 
         this.fileCountValid =false;
 
+        mSensorData = new SensorData();
+        this.count =0;
+
               // Make sure we have access coarse location enabled, if not, prompt the user to enable it
         if (this.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             final AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -223,13 +247,15 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
-    private void handleDevieList(String deviceInfo){
+    private void handleDeviceList(String deviceInfo){
+
         peripheralTextView.append(deviceInfo);
         final int scrollAmount = peripheralTextView.getLayout().getLineTop(peripheralTextView.getLineCount()) - peripheralTextView.getHeight();
         // if there is no need to scroll, scrollAmount will be <=0
         if (scrollAmount > 0) {
             peripheralTextView.scrollTo(0, scrollAmount);
         }
+        connectToDevice.setVisibility(View.VISIBLE);
 
     }
 
@@ -372,8 +398,6 @@ public class MainActivity extends AppCompatActivity {
         return false;
     }
 
-
-
     public File getPublicDocumentsStorageDir(String fileName) {
         // Get the directory for the user's public pictures directory.
         File file = new File(Environment.getExternalStoragePublicDirectory(
@@ -396,42 +420,37 @@ public class MainActivity extends AppCompatActivity {
             bytes[1] = readData[6];
             bytes[2] = readData[5];
             bytes[3] = readData[4];
-            lightVal = byteArrayToInt(bytes);
+            lightVal = SensorData.byteArrayToInt(bytes);
+            //output = " Count: " + this.count +"Light: " + lightVal +"\r\n";
             output = "Light: " + lightVal +"\r\n";
+            this.count++;
         }
         else{
             bytes[0] = readData[7];
             bytes[1] = readData[6];
             bytes[2] = readData[5];
             bytes[3] = readData[4];
-            temp = byteArrayToInt(bytes);
+            temp = SensorData.byteArrayToInt(bytes);
             bytes[0] = readData[11];
             bytes[1] = readData[10];
             bytes[2] = readData[9];
             bytes[3] = readData[8];
-            pressure = byteArrayToInt(bytes);
+            pressure = SensorData.byteArrayToInt(bytes);
             bytes[0] = readData[15];
             bytes[1] = readData[14];
             bytes[2] = readData[13];
             bytes[3] = readData[12];
-            humidity = byteArrayToInt(bytes);
+            humidity = SensorData.byteArrayToInt(bytes);
 
-
-            output = "Environment: Temp:" + temp +", Pressure: " + pressure +", Humidity: " + humidity+"\r\n";
+            output =  "Environment: Temp:" + temp +", Pressure: " + pressure +", Humidity: " + humidity+"\r\n";
+            //output =  " Count: " + this.count + "Environment: Temp:" + temp +", Pressure: " + pressure +", Humidity: " + humidity+"\r\n";
+            this.count++;
         }
 
         return output;
     }
 
-    public static int byteArrayToInt(byte[] b)
-    {
-        int value = 0;
-        for (int i = 0; i < 4; i++) {
-            int shift = (4 - 1 - i) * 8;
-            value += (b[i] & 0x000000FF) << shift;
-        }
-        return value;
-    }
+
 
        @Override
     public void onStart() {
