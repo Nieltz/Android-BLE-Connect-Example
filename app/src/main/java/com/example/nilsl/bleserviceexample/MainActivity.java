@@ -89,8 +89,7 @@ public class MainActivity extends AppCompatActivity {
                             "Temperature:" + temperature +" °mC\r\n" +
                             "Pressure: " + pressure + " mBar\r\n" +
                             "Humidity: " + humidity + " %";
-
-
+                    
                     MainActivity.this.runOnUiThread(new Runnable() {
                         public void run() {
 
@@ -423,7 +422,7 @@ public class MainActivity extends AppCompatActivity {
             lightVal = SensorData.byteArrayToInt(bytes);
             //output = " Count: " + this.count +"Light: " + lightVal +"\r\n";
             output = "Light: " + lightVal +"\r\n";
-            this.count++;
+          //  this.count++;
         }
         else{
             bytes[0] = readData[7];
@@ -444,7 +443,7 @@ public class MainActivity extends AppCompatActivity {
 
             output =  "Environment: Temp:" + temp +", Pressure: " + pressure +", Humidity: " + humidity+"\r\n";
             //output =  " Count: " + this.count + "Environment: Temp:" + temp +", Pressure: " + pressure +", Humidity: " + humidity+"\r\n";
-            this.count++;
+        //    this.count++;
         }
 
         return output;
