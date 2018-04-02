@@ -10,46 +10,50 @@
     android:paddingRight="16dp"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.example.nilsl.bleserviceexample.MainActivity">
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="BLE Service Example" />
 
     <Button
+        android:id="@+id/StartScanButton"
         android:layout_width="100dp"
         android:layout_height="50dp"
-        android:text="Scan"
-        android:id="@+id/StartScanButton"
-        android:layout_marginTop="40dp"/>
+        android:layout_alignBaseline="@+id/StopScanButton"
+        android:layout_alignBottom="@+id/StopScanButton"
+        android:layout_alignParentStart="true"
+        android:text="Scan" />
 
     <Button
+        android:id="@+id/StopScanButton"
         android:layout_width="wrap_content"
         android:layout_height="50dp"
-        android:text="Stop Scanning"
-        android:id="@+id/StopScanButton"
-        android:layout_marginTop="40dp"/>
+        android:layout_above="@+id/DisconnectButton"
+        android:layout_alignParentStart="true"
+        android:text="Stop Scanning" />
 
     <TextView
+        android:id="@+id/PeripheralTextView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_marginTop="100dp"
-        android:layout_marginBottom="80dp"
-        android:id="@+id/PeripheralTextView"
-        android:scrollbars="vertical"
-        android:maxLines="30" />
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Connect to device with index: "
-        android:id="@+id/ConnectButton"
-        android:layout_alignParentBottom="true"/>
+        android:layout_above="@+id/ConnectButton"
+        android:layout_alignParentStart="true"
+        android:layout_marginBottom="46dp"
+        android:maxLines="30"
+        android:scrollbars="vertical" />
 
     <Button
+        android:id="@+id/ConnectButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Disconnect from device"
+        android:layout_alignParentStart="true"
+        android:layout_alignTop="@+id/InputIndex"
+        android:text="Connect to device index" />
+
+    <Button
         android:id="@+id/DisconnectButton"
-        android:layout_alignParentBottom="true"/>
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/InputIndex"
+        android:layout_alignBottom="@+id/InputIndex"
+        android:layout_alignParentStart="true"
+        android:text="Disconnect from device" />
 
     <EditText
         android:layout_width="100dp"
